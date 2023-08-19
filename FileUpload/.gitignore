@@ -1,0 +1,6 @@
+.DS_Store
+/.idea/
+accounts/__pycache__/
+accounts/migrations/
+crm1/__pycache__/
+
