@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quoted
+{% endblock %}
+
+{% block main %}
+   <h2>Stock Details are as follows:</h2>
+   <br>
+   <table class = "table">
+       <tr>
+           <td>Stock Name</td>
+           <td>Price</td>
+           <td>Symbol</td>
+       </tr>
+       <tr>
+           <td>{{ symbol.name }}</td>
+           <td>{{ symbol.price }}</td>
+           <td>{{ symbol.symbol }}</td>
+       </tr>
+   </table>
+{% endblock %}

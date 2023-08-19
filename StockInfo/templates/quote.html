@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quote
+{% endblock %}
+
+{% block main %}
+    <form action = "/quote" method = "post">
+         <div class="form-group">
+            <input name = "symbol" autocomplete = "off" autofocus type = "text" placeholder = "Stock symbol" class="form-control">
+            <!--
+            <ul></ul>
+            <script>
+                let input = document.querySelector('input');
+                input.addEventListener('keyup', function(){
+                   $.get(`https://cloud.iexapis.com/beta/stock/${input.value}/app-global-data?token=pk_bd0264eae8eb47b4a9b05f2592cf0780&cache=true`, function(stock){
+                       let html = '';
+                       for (let id in stock)
+                       {
+                           let symbol = stock[id].symbol;
+                           html += '<li>' + symbol +'</li>'
+                       }
+                       document.querySelector('ul').innerHTML = html
+                   });
+                });
+            </script>
+            -->
+         </div>
+         <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Quoted
+{% endblock %}
+
+{% block main %}
+   <h2>User Trading History:</h2>
+   <br>
+   <table class = "table">
+       <tr>
+           <th>Stock Name</th>
+           <th>Symbol</th>
+           <th>Price</th>
+           <th>Quantity</th>
+           <th>Action</th>
+           <th>Date of Transaction</th>
+       </tr>
+       {% for symbol in symbols %}
+       <tr>
+
+           <td>{{ symbol.sname }}</td>
+           <td>{{ symbol.symbol }}</td>
+           <td>{{ symbol.price }}</td>
+           <td>{{ symbol.quantity }}</td>
+           <td>{{ symbol.action }}</td>
+           <td>{{ symbol.date }}</td>
+
+       </tr>
+       {% endfor %}
+   </table>
+{% endblock %}

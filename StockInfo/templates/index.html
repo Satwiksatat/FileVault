@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Portfolio Page
+{% endblock %}
+
+{% block main %}
+
+        <table class = "table">
+            <tr>
+                <th>Symbol</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>TOTAL</th>
+            </tr>
+            {% for name in names %}
+            <tr>
+                <td>{{ name.symbol }}</td>
+                <td>{{ name.sname }}</td>
+                <td>{{ name.quantity }}</td>
+                <td>{{ name.price }}</td>
+                <td>{{ name.total }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <th>Cash Remaining</th>
+                <td></td>
+                <td></td>
+                <td></td>
+                {% for data in userdata %}
+                    <td>{{ data.cash }}</td>
+                {% endfor %}
+            </tr>
+        </table>
+        <div class = "form-group">
+            <form action = "/addcash" method = "post">
+                <input name = "amount" type = "text" autocomplete = "off" placeholder = "Enter amount, Min - 1000">
+                <button class="btn btn-primary" type="submit">Add Cash</button>
+            </form>
+        </div>
+
+{% endblock %}
