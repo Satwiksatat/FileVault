@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - minio
+    ports:
+      - "5000:5000"
+    volumes:
+      - backend-data:/app/data
+  frontend:
+    build: ./frontend
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: filevault
+      POSTGRES_PASSWORD: filevaultpass
+      POSTGRES_DB: filevault
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  minio:
+    image: minio/minio:RELEASE.2022-06-17T02-52-50Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpass
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+volumes:
+  postgres-data:
+  minio-data:
+  backend-data: 
