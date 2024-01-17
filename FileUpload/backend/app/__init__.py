@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 from minio import Minio
 from dotenv import load_dotenv
 
@@ -20,6 +21,7 @@ def create_app():
 
     db.init_app(app)
     jwt.init_app(app)
+    CORS(app)
 
     global minio_client
     minio_client = Minio(
