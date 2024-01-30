@@ -1,110 +1,301 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Container, Typography, Box, TextField, List, ListItem, ListItemText, Divider } from '@mui/material';
+import {
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Avatar,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Chip,
+  Button,
+  LinearProgress,
+  Paper
+} from '@mui/material';
+import {
+  Folder as FolderIcon,
+  Group as GroupIcon,
+  Storage as StorageIcon,
+  TrendingUp as TrendingUpIcon,
+  Description as FileIcon,
+  Person as PersonIcon,
+  CloudUpload as UploadIcon,
+  Download as DownloadIcon
+} from '@mui/icons-material';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
 function Dashboard() {
-  const [groups, setGroups] = useState([]);
-  const [selectedGroup, setSelectedGroup] = useState(null);
-  const [files, setFiles] = useState([]);
-  const [groupName, setGroupName] = useState('');
-  const [file, setFile] = useState(null);
-
-  const token = localStorage.getItem('token');
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalGroups: 0,
+    totalFiles: 0,
+    totalStorage: 0,
+    recentActivity: []
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchGroups();
+    fetchDashboardData();
   }, []);
 
-  const fetchGroups = async () => {
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/groups/my`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setGroups(res.data);
+  const fetchDashboardData = async () => {
+    try {
+      const [groupsRes, filesRes, activityRes] = await Promise.all([
+        axios.get(`${process.env.REACT_APP_API_URL}/api/groups/my`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/files/stats`),
+        axios.get(`${process.env.REACT_APP_API_URL}/api/files/recent-activity`)
+      ]);
+
+      setStats({
+        totalGroups: groupsRes.data.length,
+        totalFiles: filesRes.data.total_files || 0,
+        totalStorage: filesRes.data.total_size || 0,
+        recentActivity: activityRes.data || []
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const createGroup = async () => {
-    await axios.post(`${process.env.REACT_APP_API_URL}/api/groups/`, { name: groupName }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setGroupName('');
-    fetchGroups();
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const selectGroup = async (group) => {
-    setSelectedGroup(group);
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/files/${group.id}/list`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setFiles(res.data);
+  const getActivityIcon = (type) => {
+    switch (type) {
+      case 'upload':
+        return <UploadIcon color="primary" />;
+      case 'download':
+        return <DownloadIcon color="secondary" />;
+      case 'group_created':
+        return <GroupIcon color="success" />;
+      default:
+        return <FileIcon />;
+    }
   };
 
-  const handleFileChange = (e) => setFile(e.target.files[0]);
-
-  const uploadFile = async () => {
-    if (!file || !selectedGroup) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    await axios.post(`${process.env.REACT_APP_API_URL}/api/files/${selectedGroup.id}/upload`, formData, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    selectGroup(selectedGroup);
-    setFile(null);
+  const getActivityColor = (type) => {
+    switch (type) {
+      case 'upload':
+        return 'primary';
+      case 'download':
+        return 'secondary';
+      case 'group_created':
+        return 'success';
+      default:
+        return 'default';
+    }
   };
 
-  const downloadFile = async (fileId, filename) => {
-    const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/files/${selectedGroup.id}/download/${fileId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      responseType: 'blob'
-    });
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  };
+  if (loading) {
+    return (
+      <Box sx={{ width: '100%' }}>
+        <LinearProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Container>
-      <Box mt={4}>
-        <Typography variant="h4">Dashboard</Typography>
-        <Box mt={2} display="flex" gap={2}>
-          <TextField label="New Group Name" value={groupName} onChange={e => setGroupName(e.target.value)} />
-          <Button variant="contained" onClick={createGroup}>Create Group</Button>
-        </Box>
-        <Box mt={2} display="flex" gap={4}>
-          <Box>
-            <Typography variant="h6">Your Groups</Typography>
-            <List>
-              {groups.map(group => (
-                <ListItem button key={group.id} selected={selectedGroup?.id === group.id} onClick={() => selectGroup(group)}>
-                  <ListItemText primary={group.name} />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-          <Divider orientation="vertical" flexItem />
-          <Box flex={1}>
-            {selectedGroup && (
-              <>
-                <Typography variant="h6">Files in {selectedGroup.name}</Typography>
-                <input type="file" onChange={handleFileChange} />
-                <Button variant="contained" onClick={uploadFile} disabled={!file}>Upload</Button>
+    <Box>
+      <Typography variant="h4" gutterBottom sx={{ mb: 4 }}>
+        Welcome back, {user?.username}! 👋
+      </Typography>
+
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                  <GroupIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalGroups}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Groups
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip 
+                label="Active" 
+                color="success" 
+                size="small" 
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
+                  <FileIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.totalFiles}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Files
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip 
+                label="Shared" 
+                color="info" 
+                size="small" 
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
+                  <StorageIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">
+                    {formatFileSize(stats.totalStorage)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Storage Used
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip 
+                label="Available" 
+                color="warning" 
+                size="small" 
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'warning.main', mr: 2 }}>
+                  <TrendingUpIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h4" fontWeight="bold">
+                    {stats.recentActivity.length}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Recent Activities
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip 
+                label="This Week" 
+                color="primary" 
+                size="small" 
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Recent Activity */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                Recent Activity
+              </Typography>
+              {stats.recentActivity.length > 0 ? (
                 <List>
-                  {files.map(f => (
-                    <ListItem key={f.id}>
-                      <ListItemText primary={f.filename} secondary={f.uploaded_at} />
-                      <Button onClick={() => downloadFile(f.id, f.filename)}>Download</Button>
+                  {stats.recentActivity.slice(0, 5).map((activity, index) => (
+                    <ListItem key={index} sx={{ px: 0 }}>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'grey.100' }}>
+                          {getActivityIcon(activity.type)}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={activity.description}
+                        secondary={new Date(activity.timestamp).toLocaleString()}
+                      />
+                      <Chip
+                        label={activity.type}
+                        color={getActivityColor(activity.type)}
+                        size="small"
+                        variant="outlined"
+                      />
                     </ListItem>
                   ))}
                 </List>
-              </>
-            )}
-          </Box>
-        </Box>
-      </Box>
-    </Container>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No recent activity
+                  </Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+                Quick Actions
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Button
+                  variant="contained"
+                  startIcon={<GroupIcon />}
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Create New Group
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Upload Files
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<PersonIcon />}
+                  fullWidth
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Invite Users
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
