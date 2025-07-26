@@ -1,3 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
 .DS_Store
 /.idea/
 accounts/__pycache__/
@@ -5,3 +11,24 @@ accounts/migrations/
 crm1/__pycache__/
 .env
 
+# Node
+node_modules/
+build/
+dist/
+.env.local
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# OS
+Thumbs.db
+commit_script.sh
+
+# Logs
+*.log
+
+# React
+*.env.development.local
+*.env.test.local
+*.env.production.local 
